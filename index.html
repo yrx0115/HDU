@@ -9,6 +9,12 @@
     <title>标点地图 · 标记地址，一键分享</title>
     <script type="module" crossorigin src="/assets/index-CvYK7DEb.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-ptSbkTRj.css">
+<script type="text/javascript">
+  window._AMapSecurityConfig = {
+    securityJsCode: '07d9bff37c9571aa4d07037b19df65c0' // 从高德控制台获取
+  };
+</script>
+<script src="https://webapi.amap.com/maps?v=2.0&key=59396319a64181035588b2a98ea59ca5&plugin=AMap.PlaceSearch,AMap.AutoComplete"></script>
   </head>
   <body>
     <div id="map" aria-label="地图"></div>
@@ -39,7 +45,98 @@
         </div>
       </div>
     </section>
+<script>
+// 等待页面加载完成后绑定搜索功能
+window.addEventListener('DOMContentLoaded', function() {
+  // 找到搜索输入框（根据项目 UI 推断，可能需要根据实际 DOM 调整选择器）
+  var searchInput = document.querySelector('input[type="search"], input[placeholder*="搜索"], #search-input');
+  
+  // 如果找不到输入框，尝试查找搜索图标附近的输入元素
+  if (!searchInput) {
+    var searchIcon = document.querySelector('.search-icon, [class*="search"]');
+    if (searchIcon) {
+      searchInput = searchIcon.parentElement.querySelector('input') || 
+                    searchIcon.closest('div').querySelector('input');
+    }
+  }
 
+  if (!searchInput) {
+    console.warn('未找到搜索输入框，请根据实际 DOM 结构调整选择器');
+    return;
+  }
+
+  // 初始化高德自动完成（输入联想）
+  AMap.plugin('AMap.AutoComplete', function() {
+    var autoComplete = new AMap.AutoComplete({
+      input: searchInput // 绑定到实际输入框
+    });
+  });
+
+  // 初始化高德 POI 搜索
+  var placeSearch = new AMap.PlaceSearch({
+    city: '全国',        // 可改为默认城市，如 '绍兴'
+    citylimit: false,    // 是否强制限制在城市内
+    pageSize: 15,        // 每页结果数
+    pageIndex: 1,
+    extensions: 'all'    // 返回详细信息
+  });
+
+  // 监听输入框的搜索事件（根据实际情况调整事件类型）
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && searchInput.value.trim()) {
+      e.preventDefault();
+      performSearch(searchInput.value.trim());
+    }
+  });
+
+  // 执行搜索
+  function performSearch(keyword) {
+    placeSearch.search(keyword, function(status, result) {
+      if (status === 'complete' && result.poiList && result.poiList.pois.length > 0) {
+        var pois = result.poiList.pois;
+        
+        // 如果项目中有全局的地图实例变量，替换下面的 map 变量名
+        // 例如：window.map 或 projectMap
+        var mapInstance = window.map || window.leafletMap || window.mapInstance;
+        
+        if (!mapInstance) {
+          console.warn('未找到 Leaflet 地图实例，请根据实际变量名调整');
+          return;
+        }
+
+        // 清除旧标记（可选）
+        // mapInstance.eachLayer(function(layer) {
+        //   if (layer instanceof L.Marker) mapInstance.removeLayer(layer);
+        // });
+
+        // 添加 POI 标记到地图
+        pois.forEach(function(poi) {
+          var lng = poi.location.lng;
+          var lat = poi.location.lat;
+          
+          // 坐标转换：高德使用 GCJ-02，Leaflet 默认可能使用 WGS-84
+          // 如果地图底图是高德瓦片，坐标可直接使用；如果是 OSM，需要转换
+          var marker = L.marker([lat, lng])
+            .addTo(mapInstance)
+            .bindPopup(
+              '<strong>' + poi.name + '</strong><br>' +
+              '地址：' + (poi.address || '暂无') + '<br>' +
+              (poi.tel ? '电话：' + poi.tel : '')
+            );
+        });
+
+        // 自动调整视野到第一个结果
+        if (pois.length > 0) {
+          var firstPoi = pois[0];
+          mapInstance.setView([firstPoi.location.lat, firstPoi.location.lng], 16);
+        }
+      } else {
+        console.warn('高德搜索无结果或失败：', result);
+      }
+    });
+  }
+});
+</script>
     <!-- Workspace sidebar -->
     <aside id="panel" class="panel" hidden>
       <header class="panel-head">
