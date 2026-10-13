@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="标点地图：在地图上标记地址、记录联系人和电话，一键分享给朋友。" />
+    <meta name="theme-color" content="#f4efe6" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>标点地图 · 标记地址，一键分享</title>
+    <script type="module" crossorigin src="/assets/index-CvYK7DEb.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-ptSbkTRj.css">
+  </head>
+  <body>
+    <div id="map" aria-label="地图"></div>
+
+    <!-- Landing: shown when no map is open -->
+    <section id="landing" class="landing" hidden>
+      <div class="landing-card">
+        <div class="brand brand-lg">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>标点地图</span>
+        </div>
+        <h1>把重要的地址，<br />钉在一张地图上。</h1>
+        <p class="lede">
+          添加门店、客户、亲友或活动地点，记下联系人与电话，生成链接或二维码即可分享。无需注册。
+        </p>
+        <form id="create-form" class="create-form">
+          <input id="create-title" name="title" maxlength="80" placeholder="给地图起个名字，例如：上海门店分布" />
+          <button type="submit" class="btn btn-primary">创建地图</button>
+        </form>
+        <ol class="steps">
+          <li><b>1</b>点击「添加地点」，在地图上选点或搜索地址</li>
+          <li><b>2</b>填写名称、联系人、电话和备注</li>
+          <li><b>3</b>分享只读链接或二维码，对方打开即可查看与导航</li>
+        </ol>
+        <div id="recent" class="recent" hidden>
+          <h2>最近的地图</h2>
+          <ul id="recent-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workspace sidebar -->
+    <aside id="panel" class="panel" hidden>
+      <header class="panel-head">
+        <a href="/" class="brand" title="返回首页">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>标点地图</span>
+        </a>
+        <button id="panel-toggle" class="icon-btn panel-toggle" aria-label="展开/收起列表">▾</button>
+      </header>
+
+      <div class="panel-title">
+        <input id="map-title" class="map-title" maxlength="80" aria-label="地图名称" />
+        <textarea id="map-desc" class="map-desc" maxlength="300" rows="1" placeholder="添加描述（可选）" aria-label="地图描述"></textarea>
+        <div class="badges">
+          <span id="mode-badge" class="badge"></span>
+          <span id="count-badge" class="badge badge-soft"></span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="add-btn" class="btn btn-primary" type="button">＋ 添加地点</button>
+        <button id="share-btn" class="btn" type="button">分享</button>
+      </div>
+
+      <form id="search-form" class="search">
+        <input id="search-input" type="search" placeholder="搜索地址或地点…" autocomplete="off" />
+        <button class="icon-btn" type="submit" aria-label="搜索">⌕</button>
+      </form>
+      <ul id="search-results" class="search-results" hidden></ul>
+
+      <div class="list-head">
+        <input id="filter-input" type="search" placeholder="筛选已标记的地点" autocomplete="off" />
+      </div>
+      <ul id="place-list" class="place-list"></ul>
+    </aside>
+
+    <!-- Place editor -->
+    <section id="editor" class="editor" hidden>
+      <form id="place-form">
+        <header class="editor-head">
+          <h2 id="editor-title">添加地点</h2>
+          <button type="button" class="icon-btn" data-close aria-label="关闭">✕</button>
+        </header>
+        <p class="hint">可拖动地图上的图钉微调位置。</p>
+        <label>名称<input name="label" maxlength="80" placeholder="例如：徐汇门店" required /></label>
+        <div class="row">
+          <label>联系人<input name="contactName" maxlength="60" placeholder="姓名" /></label>
+          <label>电话<input name="phone" type="tel" maxlength="40" placeholder="手机或座机" /></label>
+        </div>
+        <label>
+          <span class="label-row">地址 <button type="button" id="locate-address" class="link-btn">根据图钉识别</button></span>
+          <input name="address" maxlength="200" placeholder="详细地址" />
+        </label>
+        <label>备注<textarea name="note" maxlength="500" rows="2" placeholder="营业时间、楼层、停车信息…"></textarea></label>
+        <fieldset class="colors">
+          <legend>图钉颜色</legend>
+          <div id="color-options"></div>
+        </fieldset>
+        <p class="coords" id="coords"></p>
+        <footer class="editor-foot">
+          <button type="button" class="btn btn-danger" id="delete-place" hidden>删除</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn" data-close>取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </footer>
+      </form>
+    </section>
+
+    <!-- Share dialog -->
+    <dialog id="share-dialog" class="dialog">
+      <form method="dialog">
+        <header class="editor-head">
+          <h2>分享地图</h2>
+          <button class="icon-btn" aria-label="关闭">✕</button>
+        </header>
+      </form>
+      <div class="share-body">
+        <div id="qr" class="qr"></div>
+        <div class="share-links">
+          <label>只读链接 <small>对方可查看、拨号、导航</small>
+            <div class="copy-row">
+              <input id="view-link" readonly />
+              <button class="btn" data-copy="view-link">复制</button>
+            </div>
+          </label>
+          <label id="edit-link-wrap">协作编辑链接 <small>拿到此链接的人可以修改和删除地点</small>
+            <div class="copy-row">
+              <input id="edit-link" readonly />
+              <button class="btn" data-copy="edit-link">复制</button>
+            </div>
+          </label>
+          <button id="native-share" class="btn btn-primary" hidden>通过系统分享…</button>
+        </div>
+      </div>
+    </dialog>
+
+    <div id="placing-hint" class="placing-hint" hidden>
+      点击地图放置图钉 <button id="cancel-placing" class="link-btn">取消</button>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  </body>
+</html>
